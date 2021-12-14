@@ -1,0 +1,23 @@
+[{
+    _id: ObjectId(...),	
+    CrimeId: 160913997,
+	OriginalCrimeTypeName: 'Pay',
+	CallDateTime: 2016-03-31T23:51:00.000-05:00,
+	Disposition: 'ABA',
+	Address: '1600 Block Of Green St',
+	City: 'San Francisco',
+	State: 'CA',
+	Agency: {_Id : '1'},
+	AddressType: 'Premise Address'
+}, {
+    _id: ObjectId(...),	
+	CrimeId: 160920463,
+	OriginalCrimeTypeName: 'Well Being Check',
+	CallDateTime: 2016-04-01T05:49:00.000-05:00,
+	Disposition: 'ND',
+	Address: 'Ada Ct/ofarrell St',
+	City: 'San Francisco',
+	State: 'CA',
+	Agency: {_Id : '1'},
+	AddressType: 'Intersection'
+}]
