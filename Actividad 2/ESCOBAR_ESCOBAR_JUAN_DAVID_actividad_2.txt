@@ -1,0 +1,224 @@
+// Autor: JUAN DAVID ESCOBAR ESCOBAR.
+// Fecha Creación: 18/02/2022.
+// Descripción: Actividad 2, Laboratorio: uso de MongoDB.
+// Institución: Universidad Internacional de la Rioja, España.
+
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//                                                                              HELLO WORD MONGO DB AND ENJOY LEARNING :D
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// Punto 1. Carga de datos
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// 0. Abrir la Terminal
+// 1. Ubicarse en la ruta de instalación de mongo = cd "/usr/local/bin"
+// 2. mongoimport = install https://docs.mongodb.com/database-tools/installation/installation/
+// 3. mongoimport --verbose --db miscelanea --collection books --file  "/Users/juandavidescobarescobar/Documents/Unir/Materias/BD Big Data/Actividad 2/visa01_lab (1)/act-2-books.json"
+// 4. mongoimport --verbose --db miscelanea --collection companies  --file  "/Users/juandavidescobarescobar/Documents/Unir/Materias/BD Big Data/Actividad 2/visa01_lab (1)/act-2-companies.json"
+// 5. Terminal cmd > mongo
+
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// Punto 2. Explorando las colecciones
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+show dbs // 6. Listar BD disponibles.
+use miscelanea // 7. Definir BD miscelanea por defecto.
+show collections // 8. Listar las colecciones o tablas de la BD.
+db.books.findOne() // 9. Consultar el primer elemento de la coleccion book.
+db.books.find({}, {"categories":1, "_id":0})  // 10. count() conteo de documentos en la coleccion books.
+db.books.distinct("categories")  // 11. PREGUNTA 2-a, lista categorias unicas.
+db.books.distinct("status") // 12. PREGUNTA 2-b, lista estados unicos.
+db.books.distinct("status").length // 13. Cantidad de estados unicos.
+db.getCollection('books').find({longDescription: {$gte: "A", $lt: "B"}}, {title: 1, longDescription: 1}) // 14. PREGUNTA 2-c, lista estados unicos.
+db.getCollection('books').find({status: "PUBLISH", authors: {$size: 2}}, {title: 1, longDescription:1, status:1, authors:1}) // 15. PREGUNTA 2-d Libros con 2 autores y publicados.
+db.getCollection('books').find({status: "PUBLISH", authors: {$size: 2}}, {title: 1, longDescription:1, status:1, authors:1}).toArray() // 16. PREGUNTA 2-e Explorando conversión a objeto Array.
+db.getCollection('books').find({status: "PUBLISH", authors: {$size: 2}}, {title: 1, longDescription:1, status:1, authors:1}).toArray().forEach(function(valor, indice, array){print("Titulo: " + valor.title + "Autho 1: " + valor.authors[0] + " Author 2: " + valor.authors[1] + " Registro No. " + indice);}) // 17. PREGUNTA 2-f uso de metodo forEach() con funciñon personalizada para concatenar valores.
+
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// Punto 3. Consultando la coleccion book
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+db.books.dataSize() // 18. PREGUNTA 3-a Tamaño de la coleccion
+db.books.find({}).count() // 19. PREGUNTA 3-b Cantidad de libros en la colección
+db.books.find( { pageCount: { $gte: 200 } }).count(),   db.book.find( { pageCount: { $gte: 200 } }, {_id: 1, title:1, pageCount:1} )  // 20. PREGUNTA 3-c Libron con 200 paginas o mas. 
+db.books.find({pageCount: {$gte: 300, $lte: 600} }, {_id: 1, title:1, pageCount:1} ).pretty() //21. PREGUNTA 3-d libros que tienen entre 300 y 600 páginas. 
+db.books.find({$and:[{pageCount:{$gte:300}},{u1:{$lte:600}}]}).count() // 22. PREGUNTA 3-d libros que tienen entre 300 y 600 páginas.
+db.books.find({pageCount:{$eq:0} }, {_id: 1, title:1, pageCount:1}).count() // 23. PREGUNTA 3-e libros tienen 0 páginas y cuántos. 
+db.books.find({pageCount:{$gt:0} }).count()  // 24. PREGUNTA 3-e Libros que tienen 0 páginas.
+db.books.find({status: {$ne:"PUBLISH"}}, {_id: 1, title:1, status:1}).count() // 25. PREGUNTA 3-f Libros no publicados.
+db.books.find({status: {$eq:"PUBLISH"}}, {_id: 1, title:1, status:1}).count() // 26. PREGUNTA 3-f Libros publicados.
+
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// Punto 4. Consultando la coleccion companies
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+db.companies.dataSize() // 27. PREGUNTA 4-a Tamaño de la coleccion
+db.companies.find({}).count()  // 28. PREGUNTA 4-b Tamaño de la coleccion
+db.companies.find({founded_year:1996}, {_id:1, name:1,founded_year:1}).pretty() // 29. PREGUNTA 4-c Cantidad compañías se fundaron en los años 1996, 1997, 2001 y 2005 
+
+db.companies.aggregate([
+    {$match: { $or:[{founded_year:1996}, 
+                    {founded_year:1997}, 
+                    {founded_year:2001}, 
+                    {founded_year:2005}
+                    ]
+             }
+    },
+    {$group : {_id:"$founded_year", count:{$sum:1}}},
+    {$sort: {_id:1}},
+    {
+      $project: {
+            "founded_year": "$_id",
+            count: 1,
+            "_id": 0
+      }
+    } 
+]) // 29. PREGUNTA 4-c Cantidad compañías se fundaron en los años 1996, 1997, 2001 y 2005 
+
+db.companies.distinct("category_code")
+db.companies.find({}, {_id:1, name:1, category_code:1}).pretty()
+db.companies.find(
+      {$or: [{category_code:"web"},{category_code:"mobile"}]},
+      {
+            name:1, 
+            description:1, 
+            number_of_employees:1, 
+            email_address:1,
+            founded_year:1,
+            founded_month:1,
+            founded_day:1
+      }
+).pretty().count() // 30. PREGUNTA 4-d compañías que se dedican a “web” o “mobile”.
+
+db.companies.find(
+                    {category_code: "games_video"}, 
+                    {_id:1, name:1, category_code:1, founded_year:1}
+                ).sort({ "founded_year": -1}).pretty().count() // 31. PREGUNTA 4-e compañías que se dedican a “web” o “mobile”.
+
+
+db.companies.find({number_of_employees: {$gte:600} }, 
+                  {_id:1, name:1, number_of_employees:1}).pretty().count() // 32. PREGUNTA 4-f compañías con 600 o más empleados
+                     
+
+db.companies.find({ 
+                    $and:[    
+                            {founded_year: {$gte: 2001, $lte: 2005}},
+                            {number_of_employees: {$gte: 500}}
+                        ],
+                    $or:[
+                            {category_code: "games_video" },
+                            {category_code: "music" }
+                        ]    
+                 }, 
+                 { 
+                    _id:1, 
+                    name:1, 
+                    category_code:1,
+                    homepage_url:1, 
+                    twitter_username:1,
+                    number_of_employees:1
+                }).pretty().count() // 33. PREGUNTA 4-g 
+
+
+db.companies.find({$and:[
+                        {category_code: "games_video" },
+                        {category_code: "music" }
+                  ]},
+                  { 
+                                          _id:1, 
+                                          name:1, 
+                                          category_code:1,
+                                          homepage_url:1, 
+                                          twitter_username:1,
+                                          number_of_employees:1
+                                    }).pretty().count() // 34. PREGUNTA 4-g 
+
+db.companies.find( {offices: {$size: 2}, 
+                   $and:[
+                              {"offices.0.city": "San Francisco"},
+                              {"offices.1.city": "San Francisco"}
+                        ]},{ _id:1, offices:1}).pretty() // 34. PREGUNTA 4-h Lista las empresas que cuentan con única y exclusivamente 2 oficinas en la ciudad de San Francisco.
+
+db.companies.find({
+                        $and:[
+                              {category_code: "games_video"},
+                              {"acquisition.acquired_year": 2007},
+                              {"acquisition.price_amount": {$gte: 10000000} }
+                        ]
+                  }, 
+                  {
+                        name:1,                   
+                       "acquisition.acquired_month":1,
+                       "acquisition.acquired_day":1,
+                       "acquisition.price_currency_code":1,
+                       "acquisition.acquiring_company.name":1
+                   }).pretty().count() // 35. PREGUNTA 4-i Lista las empresas que cuentan con única y exclusivamente 2 oficinas en la ciudad de San Francisco.
+
+db.companies.find({
+                        $and:[
+                              {category_code: "games_video"},
+                              {"acquisition.acquired_year": 2007},
+                              {"acquisition.price_amount": {$gte: 10000000} }
+                        ]
+                  }).limit(2).pretty()
+
+
+db.getCollection('companies').find({ $and:[
+                    {category_code: "games_video"},
+                    {"acquisition.acquired_year": 2007},
+                    {"acquisition.price_amount": {$gte: 10000000} }
+                ]
+        }, 
+        {
+            name:1,                   
+            "acquisition.acquired_month":1,
+            "acquisition.acquired_day":1,
+            "acquisition.price_currency_code":1,
+            "acquisition.acquiring_company.name":1,
+            // acquisition:1,
+            offices: 1
+
+        }).toArray().forEach(function(valor, indice, array){
+            
+            array_offices = valor.offices;
+            current_name = valor.name;
+            current_acquired_month = valor.acquisition.acquired_month.toString()
+            current_acquired_day = valor.acquisition.acquired_day.toString()
+            current_acquisition_price_currency_code =valor.acquisition.price_currency_code.toString()
+            current_acquiring_company = valor.acquisition.acquiring_company.name.toString()  
+
+            is_culver_city = false;
+            var city_to_filter = "Culver City".toUpperCase().trim();
+            
+
+            for (var i = 0; i < array_offices.length; ++i) {
+
+                current_city = array_offices[i].city.toUpperCase().trim()   
+                
+                if( city_to_filter === current_city ){
+
+                      
+                    str_result = "nombre: " + current_name + ", mes: " + current_acquired_month  + ", dia: " + current_acquired_day + ", ciudad: " + current_city + "\n";
+
+                    print(str_result)              
+                    
+                }
+            }     
+
+            // current_index = indice + 1
+            // array_len = array.length    
+
+            // if( current_index == array_len ){
+            //     print(current_index, array_len)
+            //     print(str_result)
+            // }
+        });
+        
+        
+
+
+            
+          
+
+
+
