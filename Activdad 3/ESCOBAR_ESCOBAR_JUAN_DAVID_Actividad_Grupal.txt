@@ -1,0 +1,703 @@
+// Autor: JUAN DAVID ESCOBAR ESCOBAR.
+// Fecha Creación: 16/02/2022.
+// Descripción: Actividad 3, Laboratorio: uso de MongoDB y Neo4j.
+// Institución: Universidad Internacional de la Rioja, España.
+
+
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//                                                                              HELLO WORD MONGO, NEO4J DB AND ENJOY LEARNING :D
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// Punto 1. Monitorización en MongoDB
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// a. mongostat --discover
+// b. mongotop 5 
+// c. Seguimiento de monitoreo de siguientes instrucciones
+
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// Punto 2. Importar la BD
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// a. mongostat --discover
+// b. Ubicarse en la ruta de instalación de mongo = cd "/usr/local/bin"
+// b. mongoimport --verbose --db inspections --collection certificates --file  "/Users/juandavidescobarescobar/Documents/Unir/Materias/BD Big Data/Actividad 3/visa01_grupal/act-grupal-city_inspections.json"
+// c. mongoimport --verbose --db countries --collection small --file  "/Users/juandavidescobarescobar/Documents/Unir/Materias/BD Big Data/Actividad 3/visa01_grupal/act-grupal-countries-small.json"
+// c. mongoimport --verbose --db countries --collection big --file  "/Users/juandavidescobarescobar/Documents/Unir/Materias/BD Big Data/Actividad 3/visa01_grupal/act-grupal-countries-big.json"
+// RETO PENDIENTE !!! 
+
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// Punto 3. Exportar la BD
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// a. mongoexport --collection=certificates --db=inspections --out="/Users/juandavidescobarescobar/Documents/Unir/Materias/BD Big Data/Actividad 3/visa01_grupal/act-grupal-city_inspections_[export].json"
+
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// Punto 4. Restaurar un BD
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// a y b. mongorestore --port xxxxx PATH\dump
+
+// mongodump --db "/Users/juandavidescobarescobar/Documents/Unir/Materias/BD Big Data/Actividad 3/visa01_grupal/people-bson/dump/people"
+// mongorestore --port 27017 --db people "/Users/juandavidescobarescobar/Documents/Unir/Materias/BD Big Data/Actividad 3/visa01_grupal/people-bson/dump/people"
+
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// Punto 5. Caso de Uso
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// No aplica lineas de código, ver evidencias en informe
+
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// Punto 6.1 Caraga de  datos - openDataLocalesMadrid
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// a. No aplica lineas de código en mongo, ver evidencias en informe.
+// b. No aplica lineas de código en mongo, ver evidencias en informe.
+// c. No aplica lineas de código en mongo, ver evidencias en informe.
+// d. No aplica lineas de código en mongo, ver evidencias en informe.
+// e. load("/Users/juandavidescobarescobar/Documents/Unir/Materias/BD Big Data/Actividad 3/visa01_grupal/act-grupal-openDataLocalesMadrid-[corregido + editado].js")
+// e. datos_insertar[0]
+// f. No aplica lineas de código en mongo, ver evidencias en informe.
+// g. use Madrid
+// g. db.terrazas.insertMany(datos_insertar)
+// g. db.terrazas.find().count() // 2999
+// h. mongoimport --verbose --db madrid --collection terrazas --file  "/Users/juandavidescobarescobar/Documents/Unir/Materias/BD Big Data/Actividad 3/visa01_grupal/act-grupal-openDataLocalesMadrid-[corregido].json"
+
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// Punto 6.2 Actualización de  datos - openDataLocalesMadrid
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// a. 
+
+db.terrazas.find().count()
+db.terrazas.find({desc_distrito_local: "SALAMANCA"}, 
+                 {desc_barrio_local: "GUINDALERA"}, 
+                 {_id:1, name:1,
+                  desc_barrio_local:1, 
+                  id_situacion_terraza:1, 
+                  desc_situacion_terraza:1}).count()
+
+// Select
+
+db.terrazas.find({$and:[
+                            {
+                                desc_distrito_local:"SALAMANCA"
+                            },
+                            {
+                                desc_barrio_local:"GUINDALERA"
+                            }
+                       ]
+                },
+                {
+                    _id:1, 
+                    desc_distrito_local:1, 
+                    id_situacion_local: 1,
+                    desc_situacion_local:1,
+                    desc_barrio_local:1, 
+                    id_situacion_terraza:1, 
+                    desc_situacion_terraza:1,
+                    desc_periodo_terraza:1,
+                    id_periodo_terraza:1
+                }).pretty().count()
+
+// Update
+
+db.terrazas.updateMany(
+      {
+           $and:[
+                    {
+                        desc_distrito_local:"SALAMANCA"
+                    },
+                    {
+                        desc_barrio_local:"GUINDALERA"
+                    }
+                ]
+      },
+      {
+            $set: { 
+                     id_situacion_terraza : 8,
+                     desc_situacion_terraza: "Cerrado",                   
+                     desc_situacion_local : "Cerrado",
+                     id_situacion_local: 4
+                  }
+      }
+)
+
+// Importante: el operador $set creará el campo si este no existe.
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// b.
+
+// Se crea columns calculada para obtener total de mesas disponibles en cada periodo ("Estacional y Resto del año")
+// total_mesas_es = $mesas_es' + '$mesas_aux_es'
+// total_mesas_ra = $mesas_ra' + '$mesas_aux_ra'
+
+db.terrazas.aggregate([  
+        {
+            $addFields: { 
+                            total_mesas_es: { $add: [ "$mesas_es", "$mesas_aux_es"] },
+                            total_mesas_ra: { $add: [ "$mesas_ra", "$mesas_aux_ra"] }
+                        },
+        }
+]).forEach(function(x){
+                        //print(x.total_mesas_es, x.total_mesas_ra)
+                        //print('--------------')
+                          db.terrazas.save(x)
+                      }
+          )
+
+// Se actualiza y se crea nuevo campo llamado inspeccionar, de acuerdo a las condiciones > o < 10 mesas.
+
+db.terrazas.updateMany(
+   {
+       $and: [
+                {
+                    desc_ubicacion_terraza:"Acera"
+                }
+            ]
+   },
+   [
+     { $set: { inspeccionar: { $switch: {
+                           branches: [
+                               { case: { $gt: [ "total_mesas_es", 10 ] }, then: true },
+                               { case: { $lte: [ "total_mesas_es", 10 ] }, then: false },
+                               { case: { $gt: [ "total_mesas_ra", 10 ] }, then: true },
+                               { case: { $lte: [ "total_mesas_ra", 10 ] }, then: false }
+                           ],
+                           default: ""
+     } } } }
+   ]
+)
+
+// Validación de resultados en una muestra
+
+db.terrazas.find({
+    $and: [
+                {
+                    desc_ubicacion_terraza:"Acera"
+                }
+          ]
+}, 
+{_id:1,
+ id_periodo_terraza:1,
+ desc_ubicacion_terraza:1,
+ inspeccionar:1,
+ mesas_es:1, 
+ mesas_aux_es:1,  
+ total_mesas_es:1,
+ mesas_ra:1, 
+ mesas_aux_ra:1,  
+ total_mesas_ra:1}).pretty()
+
+//.sort({_id:1}).limit(10).pretty()
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// c. A las terrazas que se deban inspeccionar, asignad 2 mesas auxiliares y 8 sillas disponibles
+//   (tanto en período estacional como el resto del año). 
+
+/*
+ "_id" : 156,
+"id_periodo_terraza" : 2,
+"desc_ubicacion_terraza" : "Acera",
+"mesas_aux_es" : 0,
+"mesas_es" : 12,
+"inspeccionar" : true,
+"total_mesas_es" : 12
+
+-mesas_aux_es
+-mesas_aux_ra
+-mesas_es
+-mesas_ra
+
+-sillas_es: nº de sillas autorizadas en periodo estacional
+.sillas_ra: nº de sillas autorizadas resto del año 
+
+Ejemplo a actualizar
+{
+        "_id" : 73,
+        "id_periodo_terraza" : 1,
+        "desc_ubicacion_terraza" : "Acera",
+        "mesas_aux_es" : 0,
+        "mesas_aux_ra" : 0,
+        "mesas_es" : 30,
+        "sillas_es" : 120,
+        "sillas_ra" : 0,
+        "total_mesas_es" : 30,
+        "inspeccionar" : true
+}
+*/
+
+//  A las terrazas que se deban inspeccionar, asignad 2 mesas auxiliares y 8 sillas disponibles (tanto en período estacional como el resto del año). 
+
+// Update
+
+var mesas_to_add = 2;
+var sillas_to_add = 8;
+
+db.terrazas.updateMany(
+      {
+          inspeccionar: true
+      },
+      {
+          $inc: {                    
+                    mesas_aux_es: 2,
+                    mesas_aux_ra: 2,
+                    sillas_es: 8,
+                    sillas_ra: 8
+                }
+      }
+)
+
+// Validar resultados
+db.terrazas.find({inspeccionar: true,  _id:73}, {_id:1,id_periodo_terraza:1,
+                                        desc_ubicacion_terraza:1,
+                                        mesas_es:1, 
+                                        total_mesas_es:1,
+                                        inspeccionar:1,  
+                                        mesas_aux_es:1,
+                                        mesas_aux_ra:1,
+                                        sillas_es:1,
+                                        sillas_ra:1 
+                }).pretty()
+
+/*
+Ejemplo de incremento:
+
+{
+        "_id" : 73,
+        "id_periodo_terraza" : 1,
+        "desc_ubicacion_terraza" : "Acera",
+        "mesas_aux_es" : 2,
+        "mesas_aux_ra" : 2,
+        "mesas_es" : 30,
+        "sillas_es" : 128,
+        "sillas_ra" : 8,
+        "total_mesas_es" : 30,
+        "inspeccionar" : true
+}
+*/    
+
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// d. A las terrazas que no deban ser inspeccionadas, añadid el campo estado con el valor:
+//
+// •  1 si el número de sillas es menor que 10.
+// •  2 si el número de sillas está entre 10 y 20.
+// •  3 si cuenta con más de 20 sillas.
+
+// Creamos el campo calculado llamado: total_sillas = sillas_es + sillas_ra
+
+db.terrazas.aggregate([  
+        {
+            $addFields: { 
+                            total_sillas: { $add: [ "$sillas_es", "$sillas_ra"] }  
+                        }
+        }
+]).forEach(function(x){
+                          //print(x.total_sillas)
+                          //print('--------------')
+                          db.terrazas.save(x)
+                      }
+          )
+
+// Update
+
+db.terrazas.updateMany( {
+        inspeccionar : false      
+   },
+   [
+        { $set: { 
+                valor: { 
+                            $switch: {
+                                        branches: [
+                                            {  
+                                                    case: { $lt: [ "total_sillas", 10 ] }, then: 1 
+                                            },
+                                            {
+                                                    case: { $and : [ { $gte : [ "total_sillas", 10 ] },
+                                                                    { $lt : [ "total_sillas", 20 ] } ] 
+                                                        }, then: 2
+                                            },
+                                            {   
+                                                    case: { $gt: [ "total_sillas", 20 ] }, then: 3 
+                                            }
+                                        ],
+                                        default: 0
+                                    } 
+                        } 
+                } 
+        }
+   ]
+)
+
+// Validar resultados
+db.terrazas.find({inspeccionar: false }, {_id:1,
+                                          id_periodo_terraza:1,
+                                          desc_ubicacion_terraza:1,                                        
+                                          inspeccionar:1,                                         
+                                          sillas_es:1,
+                                          sillas_ra:1,
+                                          total_sillas:1,
+                                          valor: 1
+                }).pretty()
+
+// PREGUNTAR AL PROFE MARLON SI RE REFIERE AL TOTAL DE SILLAS = AUX + DISPONIBLES ?????00
+
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// e. De lunes a jueves, ningún local podrá cerrar más allá de las 00:00:00, actualizad el horario de cierre a
+//    esta nueva hora límite. 
+//
+// hora_ini_LJ_es Horario inicio de domingo a jueves periodo estacional
+// hora_fin_LJ_es Horario fin de domingo a jueves periodo estacional
+// hora_ini_LJ_ra Horario inicio de domingo a jueves resto del año
+// hora_fin_LJ_ra Horario fin de domingo a jueves resto del año
+// 'hora_ini_LJ_es', 'hora_fin_LJ_es', 'hora_ini_LJ_ra', 'hora_fin_LJ_ra',
+// 'hora_ini_VS_es', 'hora_fin_VS_es', 'hora_ini_VS_ra', 'hora_fin_VS_ra',
+
+/*
+function printSchema(obj) {
+    for (var key in obj) {
+        print( key, typeof obj[key]) ;
+    }
+};
+
+var obj = db.terrazas.findOne();
+printSchema(obj)
+*/
+
+db.terrazas.updateMany({},{ 
+     $set: { 
+                "hora_fin_LJ_es": "00:00:00",
+                "hora_ini_LJ_ra": "00:00:00"                 
+           }
+})
+
+// Validar resultados
+db.terrazas.find({id_periodo_terraza: 2 }, {_id:1,id_periodo_terraza:1,
+                                            desc_ubicacion_terraza:1,
+                                            mesas_es:1, 
+                                            total_mesas_es:1,
+                                            inspeccionar:1,  
+                                            mesas_aux_es:1,
+                                            mesas_aux_ra:1,
+                                            sillas_es:1,
+                                            sillas_ra:1,
+                                            hora_ini_LJ_es:1,
+                                            hora_fin_LJ_es:1,
+                                            hora_ini_LJ_ra:1,
+                                            hora_fin_LJ_ra:1
+                }).pretty()
+
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// f. De viernes a sábado, los locales que cierren a las 2:30:00, ahora tendrán que hacerlo a las 2:00:00. 
+
+db.terrazas.updateMany({
+    hora_fin_VS_es: "02:30:00"
+},{
+     $set: { "hora_fin_VS_es" : "02:00:00"}
+})
+
+db.terrazas.updateMany({
+    hora_fin_VS_ra: "02:30:00"
+},
+{
+     $set: { hora_fin_VS_ra : "02:00:00"}
+})
+
+// Validar resultados
+db.terrazas.find({}, 
+                {_id:1,id_periodo_terraza:1,
+                desc_ubicacion_terraza:1,
+                mesas_es:1, 
+                total_mesas_es:1,
+                inspeccionar:1,  
+                mesas_aux_es:1,
+                mesas_aux_ra:1,f
+                sillas_es:1,
+                sillas_ra:1,
+                hora_ini_VS_es:1,
+                hora_fin_VS_es:1,
+                hora_ini_VS_ra:1,
+                hora_fin_VS_ra:1}).pretty()
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// g. A todos los locales que estén sobre la calle Alcalá en Madrid se les debe inspeccionar. 
+
+
+// Update
+db.terrazas.updateMany(
+{
+    $and: [                   
+            {
+                "DESC_CLASE": "CALLE"
+            },
+            {
+                "DESC_NOMBRE":"ALCALA"
+            }
+        ]
+
+},
+{ $set: { "inspeccionar": true } });
+
+// Validar resultados
+db.terrazas.find({
+    $and: [                    
+                {
+                    "DESC_CLASE": "CALLE"
+                },
+                {
+                    "DESC_NOMBRE":"ALCALA"
+                }
+           ]
+}, 
+{_id:1,id_periodo_terraza:1,
+desc_ubicacion_terraza:1,
+DESC_CLASE:1, 
+DESC_NOMBRE:1,
+inspeccionar:1}).pretty()
+
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// h. A todos los locales con terrazas abiertas, añadid un campo revision cuyo valor sea un documento con 
+     la siguiente información: {prox_inspeccion: 10, puntuacion: 80, comentario: “separar las mesas”}
+
+// Update
+db.terrazas.updateMany(
+{
+    $or : [ 
+            {"desc_situacion_terraza" : "Abierta"},
+            {"id_situacion_terraza" : 1}
+        ]
+},{
+    $set: { 
+                prox_inspeccion: 10,
+                puntuacion: 80,
+                comentario: "separar las mesas"
+          }
+});
+
+// Validar resultados
+db.terrazas.find({
+                $or : [ 
+                        {"desc_situacion_terraza" : "Abierta"},
+                        {"id_situacion_terraza" : 1}
+                    ]    
+}, {_id:1,
+    id_periodo_terraza:1,
+    desc_situacion_local:1,
+    id_situacion_local:1,
+    prox_inspeccion:1,
+    puntuacion:1,
+    comentario:1}).pretty()
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// i. Cread una nueva colección llamada zona1, con todos los locales que pertenezcan al distrito de Villaverde.
+
+// Creat collection
+
+var array_zona1 =  db.terrazas.find({ 
+                    $and:[
+                            {
+                                id_distrito_local : 17
+                            },
+                            {
+                                desc_distrito_local  : "VILLAVERDE"
+                            }
+                        ]}, {}).toArray()
+
+db.zona1.insertMany(array_zona1)
+
+// Validar resultados
+
+db.zona1.find({}).pretty()
+
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// J. Cread una nueva colección llamada zona2, con todos los locales que pertenezcan al distrito de Salamanca y 
+//    barrio Castellana.
+//    Las restricciones se aplican sin importar la estación del año.
+
+
+var array_zona2 =  db.terrazas.find({       
+                                        $and : [ 
+                                                {"desc_distrito_local" : "SALAMANCA"},
+                                                {"id_distrito_local" : 4},
+                                                {"desc_barrio_local": "CASTELLANA"}
+                                                
+                                            ]                       
+                                    }, {}).toArray()
+
+db.zona2.insertMany(array_zona2)
+
+// Validar resultados
+
+db.zona2.find({}).pretty()
+
+
+
+
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//                                      NEO4J                                                    HELLO WORD MONGO, NEO4J DB AND ENJOY LEARNING :D
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/*
+Paso 0
+
+Proyecto = Actividad 3 grupal
+
+Paso 1
+
+BD = Censo
+
+Paso 2
+
+Generación de ficheros para cada uno de los Nodos de la BD:
+
+-barrios.csv
+-direccion_local.csv
+-direccion_terraza.csv
+-locales.csv
+-municipios.csv
+-periodo_estacional.csv
+-situacion_terraza.csv
+-terrazas.csv
+
+Paso 3:
+
+Cargar los archivos CSV en la BD y crear Nodos
+
+/Users/juandavidescobarescobar/Library/Application Support/Neo4j Desktop/Application/relate-data/dbmss/dbms-dde5cbe5-34ec-41ed-8602-6103132f2876/import/DS_Neo4j/
+/Users/juandavidescobarescobar/Library/Application%20Support/Neo4j%20De sktop/Application/relate-data/dbmss/dbms-d0c5cb43-2ea0-4f88-8d25-c17b87b0018e/import/DS_Neo4j/
+
+- Terrazas
+
+LOAD CSV WITH HEADERS FROM 'file:///DS_Neo4j/terrazas.csv' AS 
+csv_line CREATE (t:Terraza { id_terraza: toInteger(csv_line.id_terraza), 
+                                Superficie_ES: toFloat(csv_line.Superficie_ES),
+                                hora_ini_LJ_es: toString(csv_line.hora_ini_LJ_es),
+                                hora_fin_LJ_es: toString(csv_line.hora_fin_LJ_es),
+                                hora_ini_LJ_ra: toString(csv_line.hora_ini_LJ_ra),
+                                hora_fin_LJ_ra: toString(csv_line.hora_fin_LJ_ra),
+                                hora_ini_VS_es: toString(csv_line.hora_ini_VS_es),
+                                hora_fin_VS_es: toString(csv_line.hora_fin_VS_es),
+                                hora_ini_VS_ra: toString(csv_line.hora_ini_VS_ra),
+                                hora_fin_VS_ra: toString(csv_line.hora_fin_VS_ra),
+                                mesas_aux_es: toInteger(csv_line.mesas_aux_es),
+                                mesas_aux_ra: toInteger(csv_line.mesas_aux_ra),
+                                mesas_es: toInteger(csv_line.mesas_es),
+                                mesas_ra: toInteger(csv_line.mesas_ra),
+                                sillas_es: toInteger(csv_line.sillas_es),
+                                sillas_ra: toInteger(csv_line.sillas_ra),
+                                DESC_CLASE: toString(csv_line.DESC_CLASE), 
+                                DESC_NOMBRE: toString(csv_line.DESC_NOMBRE),
+                                num_terraza: toString(csv_line.num_terraza),
+                                cal_terraza: toString(csv_line.cal_terraza),
+                                desc_ubicacion_terraza: toString(csv_line.desc_ubicacion_terraza)                                
+                              })
+
+- Locales
+
+LOAD CSV WITH HEADERS FROM 'file:///DS_Neo4j/locales.csv' AS 
+csv_line CREATE (l:Local {  id_local: toInteger(csv_line.id_local), 
+                             desc_situacion_local: toString(csv_line.desc_situacion_local),
+                             Nombre: toString(csv_line.Nombre),
+                             clase_vial_edificio: toString(csv_line.clase_vial_edificio), 
+                             num_edificio: toInteger(csv_line.num_edificio),
+                             Cod_Postal: toInteger(csv_line.Cod_Postal),
+                             coordenada_x_local: toString(csv_line.coordenada_x_local),
+                             coordenada_y_local: toString(csv_line.coordenada_y_local)                                  
+
+
+                            })
+
+- Periodo estacional
+
+LOAD CSV WITH HEADERS FROM 'file:///DS_Neo4j/periodo_estacional.csv' AS 
+csv_line CREATE (pe:Periodo_Estacional { id_periodo_terraza: toInteger(csv_line.id_periodo_terraza), 
+                                        desc_periodo_terraza: toString(csv_line.desc_periodo_terraza)                  
+                                      })
+
+
+- Situacion terrazas
+
+LOAD CSV WITH HEADERS FROM 'file:///DS_Neo4j/situacion_terraza.csv' AS 
+csv_line CREATE (st:Situacion_Terraza { id_situacion_terraza: toInteger(csv_line.id_situacion_terraza), 
+                                       desc_situacion_terraza: toString(csv_line.desc_situacion_terraza)
+                                     })  
+
+- Municipios
+
+LOAD CSV WITH HEADERS FROM 'file:///DS_Neo4j/municipios.csv' AS 
+csv_line CREATE (m:Municipio { id_distrito_local: toInteger(csv_line.id_distrito_local), 
+                               desc_distrito_local: toString(csv_line.desc_distrito_local)                                                          
+                             })
+
+- Barrios
+
+LOAD CSV WITH HEADERS FROM 'file:///DS_Neo4j/barrios.csv' AS 
+csv_line CREATE (b:Barrio { desc_barrio_local: toString(csv_line.desc_barrio_local)                          
+                            })
+
+
+Paso 4:
+
+Crear las relaciones
+
+- Tabla (Nodo) - Rel Terraza - Local
+
+LOAD CSV WITH HEADERS FROM "file:///DS_Neo4j/rel_contiene.csv" AS csv_line
+MATCH(t:Terraza),(l:Local) 
+where t.id_terraza = toInteger(csv_line.id_terraza) 
+and   l.id_local = toInteger(csv_line.id_local) 
+create (t) -[c:Contiene]->(l) return c
+
+
+- Tabla (Nodo) - Rel Local - Municipio
+
+LOAD CSV WITH HEADERS FROM "file:///DS_Neo4j/rel_pertenece.csv" AS csv_line
+MATCH(l:Local),(m:Municipio) 
+where l.id_local = toInteger(csv_line.id_local) 
+and   m.id_distrito_local = toInteger(csv_line.id_distrito_local)
+create (l) -[p:Pertenece]->(m) return p
+
+- Tabla (Nodo) - Rel Municipio - Barrio
+
+LOAD CSV WITH HEADERS FROM "file:///DS_Neo4j/rel_es_contenedor.csv" AS csv_line
+MATCH(m:Municipio),(b:Barrio) 
+where m.id_distrito_local = toInteger(csv_line.id_distrito_local) 
+and   b.desc_barrio_local = toString(csv_line.desc_barrio_local)
+create (m) -[ec:EsContenedor]->(b) return ec
+
+
+- Tabla (Nodo) - Rel Terraza - Periodo_Estacional
+
+LOAD CSV WITH HEADERS FROM "file:///DS_Neo4j/rel_esta.csv" AS csv_line
+MATCH(t:Terraza),(pe:Periodo_Estacional) 
+where t.id_terraza = toInteger(csv_line.id_terraza) 
+and   pe.id_periodo_terraza = toInteger(csv_line.id_periodo_terraza)
+create (t) -[es:Esta]->(pe) return es
+
+- Tabla (Nodo) - Rel Terraza - Situacion_Terraza
+
+LOAD CSV WITH HEADERS FROM "file:///DS_Neo4j/rel_tiene_situacion.csv" AS csv_line
+MATCH(t:Terraza),(st:Situacion_Terraza) 
+where t.id_terraza = toInteger(csv_line.id_terraza) 
+and   st.id_situacion_terraza = toInteger(csv_line.id_situacion_terraza)
+create (t) -[ts:TieneSituacion]->(st) return ts
+
+Paso 4:
+
+Ejecutar consulta del modelo
+
+MATCH p=()-->() RETURN p LIMIT 25
+
+ID_TERRAZA = 700
+
+MATCH (t:Terraza)-[Contiene]->(l:Local) 
+WHERE t.id_terraza = 32
+RETURN t
+LIMIT 1
+
+MATCH (t:Terraza)-[Contiene]->(l:Local),
+      (l:Local)-[Pertenece]->(m:Municipio),
+      (m:Municipio)-[EsContenedor]->(b:Barrio),
+      (t:Terraza)-[Esta]->(pe:Periodo_Estacional),
+      (t:Terraza)-[TieneSituacion]->(st:Situacion_Terraza)
+WHERE t.id_terraza = 32
+RETURN t, l, m, b, pe, st
+LIMIT 1
+
+
+*/
